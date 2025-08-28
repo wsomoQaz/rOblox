@@ -2,7 +2,7 @@ local WindUI = loadstring(game:HttpGet("https://github.com/wsomoqaz/CX/releases/
 
 local Window = WindUI:CreateWindow({
     Title = "小郭生日快乐",
-    Icon = "door-open",
+    Icon = "rbxassetid://107989434911007",
     Author = "通用",
     Folder = "MyTestHub",
 })
