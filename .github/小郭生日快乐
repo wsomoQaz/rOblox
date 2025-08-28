@@ -2,7 +2,7 @@ local WindUI = loadstring(game:HttpGet("https://github.com/wsomoqaz/CX/releases/
 
 local Window = WindUI:CreateWindow({
     Title = "小郭生日快乐",
-    Icon = "rbxassetid://107989434911007",
+    Icon = "https://raw.githubusercontent.com/wsomoQaz/rOblox/main/.github/lmage_1756386408222.jpg",
     Author = "通用",
     Folder = "MyTestHub",
 })
