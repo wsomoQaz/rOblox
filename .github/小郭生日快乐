@@ -13,3 +13,23 @@ local Tab = Window:Tab({
     Locked = false,
 })
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local SpeedInput = Tab:Input({
+    Title = "移动速度设置",
+    Desc = "输入数字修改玩家速度",
+    Value = "",
+    InputIcon = "https://raw.githubusercontent.com/wsomoQaz/rOblox/main/1756386771849.png", -- 图标可以改，比如 zap（闪电）
+    Type = "Input",
+    Placeholder = "请输入速度数值...",
+    Callback = function(text)
+        local speed = tonumber(text) -- 转换为数字
+        if speed then
+            LocalPlayer.Character.Humanoid.WalkSpeed = speed
+            print("已将移动速度修改为: " .. speed)
+        else
+            print("请输入正确的数字！")
+        end
+    end
+})
