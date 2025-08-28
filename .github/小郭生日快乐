@@ -9,7 +9,7 @@ local Window = WindUI:CreateWindow({
 
 local Tab = Window:Tab({
     Title = "玩家",
-    Icon = "bird",
+    Icon = "https://raw.githubusercontent.com/wsomoQaz/rOblox/main/1756386771849.png",
     Locked = false,
 })
 
