@@ -177,18 +177,18 @@ local NightVisionToggle = Tab:Toggle({
 
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- 飞行相关变量
 local Flying = false
-local FlySpeed = 50 -- 默认飞行速度
+local FlySpeed = 50
 local FlyConnection
+local MoveDirection = Vector3.zero
 
 -- 输入框：设置飞行速度
 local FlySpeedInput = Tab:Input({
-    Title = "飞行速度设置",
+    Title = "飞行速度",
     Desc = "输入数值调整飞行速度",
     Value = "50",
     InputIcon = "wind",
@@ -220,30 +220,9 @@ local FlyToggle = Tab:Toggle({
 
         if Flying then
             print("飞行模式已开启 (速度 " .. FlySpeed .. ")")
-            -- 开始飞行：绑定更新
             FlyConnection = RunService.RenderStepped:Connect(function()
-                local moveDirection = Vector3.zero
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                    moveDirection = moveDirection + (workspace.CurrentCamera.CFrame.LookVector)
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                    moveDirection = moveDirection - (workspace.CurrentCamera.CFrame.LookVector)
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                    moveDirection = moveDirection - (workspace.CurrentCamera.CFrame.RightVector)
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                    moveDirection = moveDirection + (workspace.CurrentCamera.CFrame.RightVector)
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                    moveDirection = moveDirection + Vector3.new(0,1,0)
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                    moveDirection = moveDirection - Vector3.new(0,1,0)
-                end
-
-                if moveDirection.Magnitude > 0 then
-                    humanoidRootPart.Velocity = moveDirection.Unit * FlySpeed
+                if MoveDirection.Magnitude > 0 then
+                    humanoidRootPart.Velocity = MoveDirection.Unit * FlySpeed
                 else
                     humanoidRootPart.Velocity = Vector3.new(0,0,0)
                 end
@@ -254,8 +233,27 @@ local FlyToggle = Tab:Toggle({
                 FlyConnection:Disconnect()
                 FlyConnection = nil
             end
-            -- 关闭飞行时清除速度
             humanoidRootPart.Velocity = Vector3.new(0,0,0)
         end
     end
 })
+
+-- 加入手机按钮控制
+local function CreateButton(tab, title, vector)
+    return tab:Button({
+        Title = title,
+        Callback = function()
+            if Flying then
+                MoveDirection = vector
+            end
+        end
+    })
+end
+
+-- 按钮：上、下、左、右
+local BtnUp    = CreateButton(Tab, "⬆️ 上升", Vector3.new(0,1,0))
+local BtnDown  = CreateButton(Tab, "⬇️ 下降", Vector3.new(0,-1,0))
+local BtnLeft  = CreateButton(Tab, "⬅️ 左移", Vector3.new(-1,0,0))
+local BtnRight = CreateButton(Tab, "➡️ 右移", Vector3.new(1,0,0))
+local BtnFwd   = CreateButton(Tab, "前进", Vector3.new(0,0,1))
+local BtnBack  = CreateButton(Tab, "后退", Vector3.new(0,0,-1))
