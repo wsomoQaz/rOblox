@@ -537,7 +537,9 @@ local Tab = Window:Tab({
 
 -- 获取服务
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local Camera = game:GetService("Workspace").CurrentCamera
+local LocalPlayer = Players.LocalPlayer
 
 -- 创建 FOV 圆
 local FOVCircle = Drawing.new("Circle")
@@ -556,8 +558,8 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 添加开关（Toggle）
-local Toggle = Tab:Toggle({
+-- 添加开关（FOV显示）
+local FOVToggle = Tab:Toggle({
     Title = "显示FOV范围",
     Default = false,
     Callback = function(value)
@@ -571,7 +573,7 @@ local Toggle = Tab:Toggle({
 })
 
 -- 添加输入框（修改半径）
-local Input = Tab:Input({
+local FOVInput = Tab:Input({
     Title = "设置FOV半径",
     Desc = "输入数值后回车确定",
     Placeholder = "例如: 150",
@@ -586,3 +588,35 @@ local Input = Tab:Input({
     end
 })
 
+--=========== 阵容判断 Toggle ===========--
+local TeamCheckActive = false
+
+local TeamToggle = Tab:Toggle({
+    Title = "阵容判断",
+    Desc = "开启后检测敌方玩家血量",
+    Icon = "users",
+    Default = false,
+    Callback = function(state)
+        TeamCheckActive = state
+        if state then
+            print("✅ 阵容判断已开启")
+            -- 开启循环检测敌方玩家
+            spawn(function()
+                while TeamCheckActive do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
+                            local character = player.Character
+                            local hum = character and character:FindFirstChildWhichIsA("Humanoid")
+                            if hum then
+                                print("敌方玩家: "..player.Name.." 血量: "..math.floor(hum.Health))
+                            end
+                        end
+                    end
+                    wait(1) -- 每秒检测一次
+                end
+            end)
+        else
+            print("❌ 阵容判断已关闭")
+        end
+    end
+})
