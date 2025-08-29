@@ -539,6 +539,7 @@ local Tab = Window:Tab({
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 --================ FOV 圆 =================--
@@ -547,7 +548,7 @@ FOVCircle.Visible = false
 FOVCircle.Color = Color3.fromRGB(255,0,0) -- 红色
 FOVCircle.Thickness = 2
 FOVCircle.NumSides = 100
-FOVCircle.Radius = 150 -- 默认半径
+FOVCircle.Radius = 150
 FOVCircle.Filled = false
 
 RunService.RenderStepped:Connect(function()
@@ -557,7 +558,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
---=============== FOV 显示 Toggle ===============
+--=============== FOV显示开关 ===============
 Tab:Toggle({
     Title = "显示FOV范围",
     Default = false,
@@ -618,7 +619,7 @@ Tab:Toggle({
 local AimbotActive = false
 Tab:Toggle({
     Title = "自瞄开关",
-    Desc = "开启后锁定FOV范围内最近敌人",
+    Desc = "开启后自动锁定FOV范围内敌人头部",
     Icon = "target",
     Default = false,
     Callback = function(state)
@@ -635,9 +636,9 @@ Tab:Toggle({
                             local hum = char and char:FindFirstChildWhichIsA("Humanoid")
                             local head = char and char:FindFirstChild("Head")
                             if hum and head and hum.Health > 0 then
-                                -- 计算屏幕位置
+                                -- 计算屏幕距离
                                 local pos, onScreen = Camera:WorldToViewportPoint(head.Position)
-                                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                                local dist = (Vector2.new(pos.X,pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
                                 if onScreen and dist <= FOVCircle.Radius then
                                     if dist < closestDist then
                                         closestDist = dist
@@ -650,13 +651,17 @@ Tab:Toggle({
                     if target and target.Character then
                         local head = target.Character:FindFirstChild("Head")
                         if head then
-                            -- 显示名字和距离（米）
+                            -- 显示名字和距离
                             local distance = (LocalPlayer.Character.HumanoidRootPart.Position - head.Position).Magnitude
-                            print("目标: "..target.Name.." 距离: "..string.format("%.1f", distance).." 米")
-                            -- 这里可以加入自动瞄准逻辑，例如调整鼠标或CFrame
+                            print("目标: "..target.Name.." 距离: "..string.format("%.1f",distance).." 米")
+                            
+                            -- 自动瞄准逻辑（简单示例，旋转摄像机）
+                            local direction = (head.Position - Camera.CFrame.Position).Unit
+                            local cf = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + direction)
+                            Camera.CFrame = cf
                         end
                     end
-                    wait(0.1)
+                    wait(0.03) -- 控制瞄准刷新
                 end
             end)
         else
