@@ -178,7 +178,7 @@ local NightVisionToggle = Tab:Toggle({
 
 local Button = Tab:Button({
     Title = "飞行按钮",
-    Desc = "Test Button",
+    Desc = "点击会有生日祝福",
     Locked = false,
     Callback = function()
 game:GetService("StarterGui"):SetCore("SendNotification",{
