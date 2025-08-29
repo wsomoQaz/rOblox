@@ -174,3 +174,88 @@ local NightVisionToggle = Tab:Toggle({
         end
     end
 })
+
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- 飞行相关变量
+local Flying = false
+local FlySpeed = 50 -- 默认飞行速度
+local FlyConnection
+
+-- 输入框：设置飞行速度
+local FlySpeedInput = Tab:Input({
+    Title = "飞行速度设置",
+    Desc = "输入数值调整飞行速度",
+    Value = "50",
+    InputIcon = "wind",
+    Type = "Input",
+    Placeholder = "请输入速度...",
+    Callback = function(text)
+        local speed = tonumber(text)
+        if speed then
+            FlySpeed = speed
+            print("飞行速度已设置为: " .. FlySpeed)
+        else
+            print("请输入正确的数值！")
+        end
+    end
+})
+
+-- 开关：飞行模式
+local FlyToggle = Tab:Toggle({
+    Title = "飞行模式",
+    Desc = "开启后可以在空中自由移动",
+    Icon = "plane",
+    Default = false,
+    Callback = function(state)
+        Flying = state
+        local character = LocalPlayer.Character
+        if not character then return end
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if not humanoidRootPart then return end
+
+        if Flying then
+            print("飞行模式已开启 (速度 " .. FlySpeed .. ")")
+            -- 开始飞行：绑定更新
+            FlyConnection = RunService.RenderStepped:Connect(function()
+                local moveDirection = Vector3.zero
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                    moveDirection = moveDirection + (workspace.CurrentCamera.CFrame.LookVector)
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                    moveDirection = moveDirection - (workspace.CurrentCamera.CFrame.LookVector)
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                    moveDirection = moveDirection - (workspace.CurrentCamera.CFrame.RightVector)
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                    moveDirection = moveDirection + (workspace.CurrentCamera.CFrame.RightVector)
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                    moveDirection = moveDirection + Vector3.new(0,1,0)
+                end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+                    moveDirection = moveDirection - Vector3.new(0,1,0)
+                end
+
+                if moveDirection.Magnitude > 0 then
+                    humanoidRootPart.Velocity = moveDirection.Unit * FlySpeed
+                else
+                    humanoidRootPart.Velocity = Vector3.new(0,0,0)
+                end
+            end)
+        else
+            print("飞行模式已关闭")
+            if FlyConnection then
+                FlyConnection:Disconnect()
+                FlyConnection = nil
+            end
+            -- 关闭飞行时清除速度
+            humanoidRootPart.Velocity = Vector3.new(0,0,0)
+        end
+    end
+})
