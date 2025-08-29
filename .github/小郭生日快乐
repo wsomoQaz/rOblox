@@ -36,6 +36,33 @@ local SpeedInput = Tab:Input({
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+
+local JumpInput = Tab:Input({
+    Title = "跳跃高度设置",
+    Desc = "输入数字修改玩家跳跃高度",
+    Value = "",
+    InputIcon = "arrow-up-from-line", -- 图标（往上跳的样式）
+    Type = "Input",
+    Placeholder = "请输入跳跃高度数值...",
+    Callback = function(text)
+        local jump = tonumber(text) -- 转换为数字
+        if jump then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.UseJumpPower = true -- 确保启用 JumpPower 模式
+                humanoid.JumpPower = jump
+                print("已将玩家跳跃高度修改为: " .. jump)
+            else
+                print("未找到Humanoid，可能角色还没加载")
+            end
+        else
+            print("请输入正确的数字！")
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
 local GravityInput = Tab:Input({
