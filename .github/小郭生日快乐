@@ -33,3 +33,25 @@ local SpeedInput = Tab:Input({
         end
     end
 })
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+
+local GravityInput = Tab:Input({
+    Title = "重力设置",
+    Desc = "输入数字修改全局重力 (默认196.2)",
+    Value = "",
+    InputIcon = "circle-dot", -- 图标随意，这里用圆点
+    Type = "Input",
+    Placeholder = "请输入重力数值...",
+    Callback = function(text)
+        local gravity = tonumber(text) -- 转换为数字
+        if gravity then
+            Workspace.Gravity = gravity
+            print("已将重力修改为: " .. gravity)
+        else
+            print("请输入正确的数字！")
+        end
+    end
+})
