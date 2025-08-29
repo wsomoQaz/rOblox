@@ -540,6 +540,335 @@ local Button = Tab:Button({
     Desc = "点击打开自瞄",
     Locked = false,
     Callback = function()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- 创建ScreenGui
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+ScreenGui.Name = "SciFiGui"
+
+-- 主框架 (带发光边框)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 320, 0, 320)
+MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
+
+-- 发光边框
+local GlowFrame = Instance.new("ImageLabel", MainFrame)
+GlowFrame.Size = UDim2.new(1, 20, 1, 20)
+GlowFrame.Position = UDim2.new(0, -10, 0, -10)
+GlowFrame.BackgroundTransparency = 1
+GlowFrame.Image = "rbxassetid://3521144369"
+GlowFrame.ImageColor3 = Color3.fromRGB(0, 170, 255)
+GlowFrame.ScaleType = Enum.ScaleType.Slice
+GlowFrame.SliceCenter = Rect.new(10, 10, 118, 118)
+GlowFrame.ZIndex = 0
+
+-- 标题阴影
+local TitleShadow = Instance.new("TextLabel", MainFrame)
+TitleShadow.Size = UDim2.new(1, 0, 0, 30)
+TitleShadow.Position = UDim2.new(0, 2, 0, 2)
+TitleShadow.BackgroundTransparency = 1
+TitleShadow.Text = "aimbot"
+TitleShadow.TextColor3 = Color3.fromRGB(0, 255, 255)
+TitleShadow.Font = Enum.Font.GothamBold
+TitleShadow.TextScaled = true
+TitleShadow.ZIndex = 2
+TitleShadow.TextTransparency = 0.7
+
+-- 主标题
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "aimbot"
+Title.TextColor3 = Color3.fromRGB(0, 230, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextScaled = true
+Title.ZIndex = 3
+
+-- 关闭按钮
+local CloseButton = Instance.new("TextButton", MainFrame)
+CloseButton.Size = UDim2.new(0, 36, 0, 36)
+CloseButton.Position = UDim2.new(1, -42, 0, 6)
+CloseButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.Text = "X"
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextScaled = true
+CloseButton.AutoButtonColor = false
+Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(1, 0)
+CloseButton.ZIndex = 4
+
+-- 关闭按钮悬浮效果
+CloseButton.MouseEnter:Connect(function()
+    CloseButton.BackgroundColor3 = Color3.fromRGB(0, 210, 255)
+end)
+CloseButton.MouseLeave:Connect(function()
+    CloseButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+end)
+
+-- 内容容器
+local ContentFrame = Instance.new("Frame", MainFrame)
+ContentFrame.Position = UDim2.new(0, 0, 0, 40)
+ContentFrame.Size = UDim2.new(1, 0, 1, -40)
+ContentFrame.BackgroundTransparency = 1
+
+-- 创建科幻风按钮函数
+local function createSciFiButton(parent, text, posY)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1, -30, 0, 40)
+    btn.Position = UDim2.new(0, 15, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 100, 160)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextScaled = true
+    btn.Text = text
+    btn.AutoButtonColor = false
+    btn.ZIndex = 5
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 12)
+
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(0, 100, 160)
+    end)
+
+    return btn
+end
+
+-- 按钮和输入框
+local ToggleFov = createSciFiButton(ContentFrame, "FOV 环：关闭", 0)
+local ToggleAimbot = createSciFiButton(ContentFrame, "Aimbot：关闭", 50)
+local ToggleTeamCheck = createSciFiButton(ContentFrame, "阵容判断：开启", 100)
+
+local InputBox = Instance.new("TextBox", ContentFrame)
+InputBox.Size = UDim2.new(1, -30, 0, 40)
+InputBox.Position = UDim2.new(0, 15, 0, 150)
+InputBox.PlaceholderText = "输入 FOV 半径，例如 100"
+InputBox.BackgroundColor3 = Color3.fromRGB(15, 25, 50)
+InputBox.TextColor3 = Color3.fromRGB(0, 255, 255)
+InputBox.Font = Enum.Font.GothamSemibold
+InputBox.TextScaled = true
+InputBox.Text = ""
+InputBox.ZIndex = 5
+Instance.new("UICorner", InputBox).CornerRadius = UDim.new(0, 12)
+InputBox.TextStrokeTransparency = 0.7
+
+-- 圆形悬浮按钮
+local FloatingButton = Instance.new("ImageButton", ScreenGui)
+FloatingButton.Size = UDim2.new(0, 50, 0, 50)
+FloatingButton.Position = UDim2.new(0, 20, 0, 200)
+FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+FloatingButton.Visible = false
+FloatingButton.Image = ""
+Instance.new("UICorner", FloatingButton).CornerRadius = UDim.new(1, 0)
+FloatingButton.ZIndex = 10
+
+-- 悬浮按钮拖动变量
+local fbDragging = false
+local fbDragStart
+local fbStartPos
+
+local function updateFloatingButtonDrag(input)
+    local delta = input.Position - fbDragStart
+    local newX = math.clamp(fbStartPos.X.Offset + delta.X, 0, camera.ViewportSize.X - FloatingButton.AbsoluteSize.X)
+    local newY = math.clamp(fbStartPos.Y.Offset + delta.Y, 0, camera.ViewportSize.Y - FloatingButton.AbsoluteSize.Y)
+    FloatingButton.Position = UDim2.new(0, newX, 0, newY)
+end
+
+FloatingButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        fbDragging = true
+        fbDragStart = input.Position
+        fbStartPos = FloatingButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                fbDragging = false
+            end
+        end)
+    end
+end)
+
+FloatingButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and fbDragging then
+        updateFloatingButtonDrag(input)
+    end
+end)
+
+FloatingButton.MouseEnter:Connect(function()
+    FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 210, 255)
+end)
+FloatingButton.MouseLeave:Connect(function()
+    FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+end)
+
+FloatingButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    FloatingButton.Visible = false
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    FloatingButton.Visible = true
+end)
+
+-- 自定义标题栏拖动（只绑定在标题Title）
+local dragging = false
+local dragStartPos = nil
+local frameStartPos = nil
+
+Title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStartPos = input.Position
+        frameStartPos = MainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+Title.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStartPos
+        MainFrame.Position = UDim2.new(
+            frameStartPos.X.Scale,
+            frameStartPos.X.Offset + delta.X,
+            frameStartPos.Y.Scale,
+            frameStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Drawing库绘制FOV圆
+local FovCircle = Drawing.new("Circle")
+FovCircle.Visible = false
+FovCircle.Color = Color3.fromRGB(0, 170, 255)
+FovCircle.Thickness = 2
+FovCircle.NumSides = 100
+FovCircle.Filled = false
+FovCircle.Position = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
+FovCircle.Radius = 100
+
+-- Drawing名字和距离显示
+local NameLabel = Drawing.new("Text")
+NameLabel.Visible = false
+NameLabel.Color = Color3.fromRGB(0, 255, 255)
+NameLabel.Size = 18
+NameLabel.Center = true
+NameLabel.Outline = true
+NameLabel.OutlineColor = Color3.new(0, 0, 0)
+
+local DistanceLabel = Drawing.new("Text")
+DistanceLabel.Visible = false
+DistanceLabel.Color = Color3.fromRGB(0, 255, 255)
+DistanceLabel.Size = 14
+DistanceLabel.Center = true
+DistanceLabel.Outline = true
+DistanceLabel.OutlineColor = Color3.new(0, 0, 0)
+
+-- 控制变量
+local fovEnabled = false
+local aimbotEnabled = false
+local teamCheckEnabled = true
+
+ToggleFov.MouseButton1Click:Connect(function()
+    fovEnabled = not fovEnabled
+    FovCircle.Visible = fovEnabled
+    ToggleFov.Text = fovEnabled and "FOV 环：关闭" or "FOV 环：开启"
+end)
+
+ToggleAimbot.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    ToggleAimbot.Text = aimbotEnabled and "Aimbot：关闭" or "Aimbot：开启"
+end)
+
+ToggleTeamCheck.MouseButton1Click:Connect(function()
+    teamCheckEnabled = not teamCheckEnabled
+    if teamCheckEnabled then
+        ToggleTeamCheck.Text = "阵容判断：开启"
+        ToggleTeamCheck.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
+    else
+        ToggleTeamCheck.Text = "阵容判断：关闭"
+        ToggleTeamCheck.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+    end
+end)
+
+InputBox.FocusLost:Connect(function(enter)
+    if enter then
+        local radius = tonumber(InputBox.Text)
+        if radius and radius > 0 then
+            FovCircle.Radius = radius
+        else
+            InputBox.Text = ""
+            warn("请输入合法数字")
+        end
+    end
+end)
+
+-- Aimbot主逻辑
+RunService.RenderStepped:Connect(function()
+    if not (fovEnabled and aimbotEnabled) then
+        NameLabel.Visible = false
+        DistanceLabel.Visible = false
+        return
+    end
+
+    local closestTarget = nil
+    local shortestDistToScreenCenter = math.huge
+    local screenCenter = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
+
+    for _, target in ipairs(Players:GetPlayers()) do
+        if target ~= player and target.Character and target.Character:FindFirstChild("Head") then
+            if not teamCheckEnabled or target.Team ~= player.Team then
+                local headPos, onScreen = camera:WorldToViewportPoint(target.Character.Head.Position)
+                if onScreen then
+                    local screenPoint = Vector2.new(headPos.X, headPos.Y)
+                    local distFromFovCenter = (screenPoint - FovCircle.Position).Magnitude
+
+                    if distFromFovCenter <= FovCircle.Radius then
+                        local distToCenter = (screenPoint - screenCenter).Magnitude
+                        if distToCenter < shortestDistToScreenCenter then
+                            shortestDistToScreenCenter = distToCenter
+                            closestTarget = target
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if closestTarget and closestTarget.Character and closestTarget.Character:FindFirstChild("Head") then
+        local headPos3 = closestTarget.Character.Head.Position
+        camera.CFrame = CFrame.new(camera.CFrame.Position, headPos3)
+
+        local screenPos, onScreen = camera:WorldToViewportPoint(headPos3)
+        if onScreen then
+            NameLabel.Visible = true
+            DistanceLabel.Visible = true
+            NameLabel.Position = Vector2.new(screenPos.X, screenPos.Y - 25)
+            DistanceLabel.Position = Vector2.new(screenPos.X, screenPos.Y - 5)
+            NameLabel.Text = closestTarget.Name
+            local dist = math.floor((player.Character.Head.Position - headPos3).Magnitude)
+            DistanceLabel.Text = tostring(dist) .. " studs"
+        else
+            NameLabel.Visible = false
+            DistanceLabel.Visible = false
+        end
+    else
+        NameLabel.Visible = false
+        DistanceLabel.Visible = false
+    end
+end)
         print("clicked")
     end
 })
