@@ -113,3 +113,64 @@ local HeadInput = Tab:Input({
         end
     end
 })
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+local InfiniteJumpEnabled = false
+
+-- 开关：无限跳跃
+local InfiniteJumpToggle = Tab:Toggle({
+    Title = "无限跳跃",
+    Desc = "开启后可在空中连续跳跃",
+    Icon = "arrow-up-from-line",
+    Default = false,
+    Callback = function(state)
+        InfiniteJumpEnabled = state
+        if state then
+            print("无限跳跃已开启")
+        else
+            print("无限跳跃已关闭")
+        end
+    end
+})
+
+-- 监听玩家输入跳跃
+UserInputService.JumpRequest:Connect(function()
+    if InfiniteJumpEnabled and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+
+local Lighting = game:GetService("Lighting")
+
+-- 提前准备夜视效果
+local NightVision = Instance.new("ColorCorrectionEffect")
+NightVision.Name = "NightVisionEffect"
+NightVision.Brightness = 0.2
+NightVision.Contrast = 0.3
+NightVision.Saturation = 1
+NightVision.TintColor = Color3.fromRGB(150, 255, 150) -- 绿色滤镜
+NightVision.Enabled = false
+NightVision.Parent = Lighting
+
+-- 开关：夜视
+local NightVisionToggle = Tab:Toggle({
+    Title = "夜视模式",
+    Desc = "开启后在黑暗中看得更清楚",
+    Icon = "moon",
+    Default = false,
+    Callback = function(state)
+        NightVision.Enabled = state
+        if state then
+            print("夜视已开启")
+        else
+            print("夜视已关闭")
+        end
+    end
+})
