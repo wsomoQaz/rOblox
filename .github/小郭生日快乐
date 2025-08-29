@@ -83,36 +83,7 @@ local GravityInput = Tab:Input({
     end
 })
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
-local HeadInput = Tab:Input({
-    Title = "头部大小设置",
-    Desc = "输入数值修改其他玩家的头部大小 (R6 / R15 自动适配)",
-    Value = "",
-    InputIcon = "circle",
-    Type = "Input",
-    Placeholder = "请输入数值...",
-    Callback = function(text)
-        local num = tonumber(text)
-        if num then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character then
-                    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-                    if humanoid and humanoid.RigType == Enum.HumanoidRigType.R15 then
-                        -- R15 修改 HeadScale
-                        ModifyR15Head(player, num)
-                    else
-                        -- R6 直接改 Head 大小
-                        ModifyR6Head(player, num)
-                    end
-                end
-            end
-        else
-            print("请输入正确的数字！")
-        end
-    end
-})
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
