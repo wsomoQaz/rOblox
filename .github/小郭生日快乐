@@ -535,140 +535,145 @@ local Tab = Window:Tab({
     Locked = false,
 })
 
--- 获取服务
-local RunService = game:GetService("RunService")
+-- 服务
 local Players = game:GetService("Players")
-local Camera = workspace.CurrentCamera
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
 
---================ FOV 圆 ===================
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Visible = false
-FOVCircle.Color = Color3.fromRGB(255,0,0) -- 红色
-FOVCircle.Thickness = 2
-FOVCircle.NumSides = 100
-FOVCircle.Radius = 150
-FOVCircle.Filled = false
+-- Drawing库：FOV圆
+local FovCircle = Drawing.new("Circle")
+FovCircle.Visible = false
+FovCircle.Color = Color3.fromRGB(0,170,255)
+FovCircle.Thickness = 2
+FovCircle.NumSides = 100
+FovCircle.Filled = false
+FovCircle.Position = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
+FovCircle.Radius = 100
 
+-- Drawing库：名字和距离
+local NameLabel = Drawing.new("Text")
+NameLabel.Visible = false
+NameLabel.Color = Color3.fromRGB(0,255,255)
+NameLabel.Size = 18
+NameLabel.Center = true
+NameLabel.Outline = true
+NameLabel.OutlineColor = Color3.new(0,0,0)
+
+local DistanceLabel = Drawing.new("Text")
+DistanceLabel.Visible = false
+DistanceLabel.Color = Color3.fromRGB(0,255,255)
+DistanceLabel.Size = 14
+DistanceLabel.Center = true
+DistanceLabel.Outline = true
+DistanceLabel.OutlineColor = Color3.new(0,0,0)
+
+-- 控制变量
+local fovEnabled = false
+local aimbotEnabled = false
+local teamCheckEnabled = true
+
+-- Input 控件：FOV 半径
+local FovInput = Tab:Input({
+    Title = "FOV半径",
+    Desc = "输入数值回车确认",
+    Placeholder = "例如 150",
+    Callback = function(value)
+        local radius = tonumber(value)
+        if radius and radius > 0 then
+            FovCircle.Radius = radius
+            print("✅ FOV 半径设置为: "..radius)
+        else
+            warn("⚠️ 输入的半径无效")
+        end
+    end
+})
+
+-- Toggle 控件：FOV显示/隐藏
+local FovToggle = Tab:Toggle({
+    Title = "显示FOV环",
+    Desc = "开关FOV圆圈显示",
+    Type = "Checkbox",
+    Default = false,
+    Callback = function(state)
+        fovEnabled = state
+        FovCircle.Visible = state
+        print(state and "✅ FOV 显示已开启" or "❌ FOV 已隐藏")
+    end
+})
+
+-- Toggle 控件：阵容判断
+local TeamToggle = Tab:Toggle({
+    Title = "阵容判断",
+    Desc = "开启/关闭队伍判断",
+    Type = "Checkbox",
+    Default = true,
+    Callback = function(state)
+        teamCheckEnabled = state
+        print(state and "✅ 阵容判断已开启" or "❌ 阵容判断已关闭")
+    end
+})
+
+-- Toggle 控件：Aimbot开关
+local AimbotToggle = Tab:Toggle({
+    Title = "Aimbot",
+    Desc = "开关自瞄功能",
+    Type = "Checkbox",
+    Default = false,
+    Callback = function(state)
+        aimbotEnabled = state
+        print(state and "✅ Aimbot 已开启" or "❌ Aimbot 已关闭")
+    end
+})
+
+-- 自瞄逻辑
 RunService.RenderStepped:Connect(function()
-    if FOVCircle.Visible then
-        local viewportSize = Camera.ViewportSize
-        FOVCircle.Position = Vector2.new(viewportSize.X/2, viewportSize.Y/2)
+    if not (fovEnabled and aimbotEnabled) then
+        NameLabel.Visible = false
+        DistanceLabel.Visible = false
+        return
+    end
+
+    local closestTarget = nil
+    local shortestDistToCenter = math.huge
+    local screenCenter = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
+
+    for _, target in ipairs(Players:GetPlayers()) do
+        if target ~= player and target.Character and target.Character:FindFirstChild("Head") then
+            if not teamCheckEnabled or target.Team ~= player.Team then
+                local headPos, onScreen = camera:WorldToViewportPoint(target.Character.Head.Position)
+                if onScreen then
+                    local distFromFovCenter = (Vector2.new(headPos.X, headPos.Y) - FovCircle.Position).Magnitude
+                    if distFromFovCenter <= FovCircle.Radius then
+                        local distToCenter = (Vector2.new(headPos.X, headPos.Y) - screenCenter).Magnitude
+                        if distToCenter < shortestDistToCenter then
+                            shortestDistToCenter = distToCenter
+                            closestTarget = target
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if closestTarget and closestTarget.Character and closestTarget.Character:FindFirstChild("Head") then
+        local headPos3 = closestTarget.Character.Head.Position
+        camera.CFrame = CFrame.new(camera.CFrame.Position, headPos3)
+        local screenPos, onScreen = camera:WorldToViewportPoint(headPos3)
+        if onScreen then
+            NameLabel.Visible = true
+            DistanceLabel.Visible = true
+            NameLabel.Position = Vector2.new(screenPos.X, screenPos.Y - 25)
+            DistanceLabel.Position = Vector2.new(screenPos.X, screenPos.Y - 5)
+            NameLabel.Text = closestTarget.Name
+            local dist = math.floor((player.Character.Head.Position - headPos3).Magnitude)
+            DistanceLabel.Text = tostring(dist).." 米"
+        else
+            NameLabel.Visible = false
+            DistanceLabel.Visible = false
+        end
+    else
+        NameLabel.Visible = false
+        DistanceLabel.Visible = false
     end
 end)
-
---=============== FOV显示 Toggle ===============
-Tab:Toggle({
-    Title = "显示FOV范围",
-    Default = false,
-    Callback = function(value)
-        FOVCircle.Visible = value
-        print(value and "✅ FOV显示已开启" or "❌ FOV显示已关闭")
-    end
-})
-
---=============== FOV半径输入框 ===============
-Tab:Input({
-    Title = "设置FOV半径",
-    Desc = "输入数值后回车确认",
-    Placeholder = "例如: 150",
-    Callback = function(value)
-        local num = tonumber(value)
-        if num then
-            FOVCircle.Radius = num
-            print("🎯 FOV半径已设置为 "..num.." 米")
-        else
-            warn("⚠️ 请输入正确数字")
-        end
-    end
-})
-
---=============== 阵容判断 Toggle ===============
-local TeamCheckActive = false
-Tab:Toggle({
-    Title = "阵容判断",
-    Desc = "开启后检测敌方玩家血量",
-    Icon = "users",
-    Default = false,
-    Callback = function(state)
-        TeamCheckActive = state
-        if state then
-            print("✅ 阵容判断已开启")
-            spawn(function()
-                while TeamCheckActive do
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
-                            local char = player.Character
-                            local hum = char and char:FindFirstChildWhichIsA("Humanoid")
-                            if hum then
-                                print("敌方玩家: "..player.Name.." 血量: "..math.floor(hum.Health))
-                            end
-                        end
-                    end
-                    wait(1)
-                end
-            end)
-        else
-            print("❌ 阵容判断已关闭")
-        end
-    end
-})
-
---=============== Aimbot Toggle ===============
-local AimbotActive = false
-local Smoothness = 0.2 -- 控制瞄准平滑度 (0=瞬间, 0.2=慢速)
-Tab:Toggle({
-    Title = "自瞄开关",
-    Desc = "开启后自动锁定FOV范围内敌人头部",
-    Icon = "target",
-    Default = false,
-    Callback = function(state)
-        AimbotActive = state
-        if state then
-            print("✅ 自瞄已开启")
-            spawn(function()
-                while AimbotActive do
-                    local closestDist = math.huge
-                    local target = nil
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
-                            local char = player.Character
-                            local hum = char and char:FindFirstChildWhichIsA("Humanoid")
-                            local head = char and char:FindFirstChild("Head")
-                            if hum and head and hum.Health > 0 then
-                                local pos, onScreen = Camera:WorldToViewportPoint(head.Position)
-                                local dist = (Vector2.new(pos.X,pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
-                                if onScreen and dist <= FOVCircle.Radius then
-                                    if dist < closestDist then
-                                        closestDist = dist
-                                        target = player
-                                    end
-                                end
-                            end
-                        end
-                    end
-                    if target and target.Character then
-                        local head = target.Character:FindFirstChild("Head")
-                        if head then
-                            -- 显示名字和距离
-                            local distance = (LocalPlayer.Character.HumanoidRootPart.Position - head.Position).Magnitude
-                            print("目标: "..target.Name.." 距离: "..string.format("%.1f",distance).." 米")
-
-                            -- =========== 自动瞄准逻辑 ===========
-                            local camPos = Camera.CFrame.Position
-                            local direction = (head.Position - camPos).Unit
-                            local targetCFrame = CFrame.new(camPos, camPos + direction)
-                            
-                            -- 平滑瞄准
-                            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
-                        end
-                    end
-                    wait(0.03) -- 瞄准刷新间隔
-                end
-            end)
-        else
-            print("❌ 自瞄已关闭")
-        end
-    end
-})
