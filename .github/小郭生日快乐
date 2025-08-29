@@ -542,7 +542,7 @@ local Camera = workspace.CurrentCamera
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
---================ FOV 圆 =================--
+--================ FOV 圆 ===================
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Visible = false
 FOVCircle.Color = Color3.fromRGB(255,0,0) -- 红色
@@ -558,7 +558,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
---=============== FOV显示开关 ===============
+--=============== FOV显示 Toggle ===============
 Tab:Toggle({
     Title = "显示FOV范围",
     Default = false,
@@ -617,6 +617,7 @@ Tab:Toggle({
 
 --=============== Aimbot Toggle ===============
 local AimbotActive = false
+local Smoothness = 0.2 -- 控制瞄准平滑度 (0=瞬间, 0.2=慢速)
 Tab:Toggle({
     Title = "自瞄开关",
     Desc = "开启后自动锁定FOV范围内敌人头部",
@@ -636,7 +637,6 @@ Tab:Toggle({
                             local hum = char and char:FindFirstChildWhichIsA("Humanoid")
                             local head = char and char:FindFirstChild("Head")
                             if hum and head and hum.Health > 0 then
-                                -- 计算屏幕距离
                                 local pos, onScreen = Camera:WorldToViewportPoint(head.Position)
                                 local dist = (Vector2.new(pos.X,pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
                                 if onScreen and dist <= FOVCircle.Radius then
@@ -654,14 +654,17 @@ Tab:Toggle({
                             -- 显示名字和距离
                             local distance = (LocalPlayer.Character.HumanoidRootPart.Position - head.Position).Magnitude
                             print("目标: "..target.Name.." 距离: "..string.format("%.1f",distance).." 米")
+
+                            -- =========== 自动瞄准逻辑 ===========
+                            local camPos = Camera.CFrame.Position
+                            local direction = (head.Position - camPos).Unit
+                            local targetCFrame = CFrame.new(camPos, camPos + direction)
                             
-                            -- 自动瞄准逻辑（简单示例，旋转摄像机）
-                            local direction = (head.Position - Camera.CFrame.Position).Unit
-                            local cf = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + direction)
-                            Camera.CFrame = cf
+                            -- 平滑瞄准
+                            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
                         end
                     end
-                    wait(0.03) -- 控制瞄准刷新
+                    wait(0.03) -- 瞄准刷新间隔
                 end
             end)
         else
