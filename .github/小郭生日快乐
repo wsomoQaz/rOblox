@@ -518,3 +518,42 @@ end)
         print("clicked")
     end
 })
+
+local Toggle = Tab:Toggle({
+    Title = "穿墙开关",       -- 开关标题
+    Desc = "开启后可直接穿过墙壁", -- 开关描述
+    Icon = "wall",           -- 图标（随意，你也可以换成 "ghost"）
+    Type = "Checkbox",       -- 开关类型
+    Default = false,         -- 初始状态（false = 关闭，true = 默认开启）
+    Callback = function(state) 
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        local LocalPlayer = Players.LocalPlayer
+
+        if state then
+            print("穿墙已开启")
+            -- 启用穿墙
+            _G.Noclip = true
+            RunService.Stepped:Connect(function()
+                if _G.Noclip and LocalPlayer.Character then
+                    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                        if part:IsA("BasePart") and part.CanCollide == true then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        else
+            print("穿墙已关闭")
+            -- 关闭穿墙：恢复碰撞
+            _G.Noclip = false
+            if LocalPlayer.Character then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+})
