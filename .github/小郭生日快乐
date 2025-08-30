@@ -576,6 +576,62 @@ local Toggle = Tab:Toggle({
     end
 })
 
+-- 本地脚本：跳跃锁高度 + 可走动
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local rootPart = nil
+local humanoid = nil
+local jumpHeight = nil
+local connection = nil
+local locked = false
+
+-- 锁高度开关
+local function setLock(state)
+    locked = state
+    if locked then
+        if LocalPlayer.Character then
+            humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
+            rootPart = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+        end
+
+        -- 监听跳跃动作
+        UserInputService.JumpRequest:Connect(function()
+            if locked and rootPart then
+                jumpHeight = rootPart.Position.Y
+
+                if not connection then
+                    connection = RunService.RenderStepped:Connect(function()
+                        if locked and rootPart and jumpHeight then
+                            -- 让玩家保持高度，但可以左右走
+                            rootPart.Velocity = Vector3.new(rootPart.Velocity.X, 0, rootPart.Velocity.Z)
+                            rootPart.CFrame = CFrame.new(rootPart.Position.X, jumpHeight, rootPart.Position.Z, rootPart.CFrame:components())
+                        end
+                    end)
+                end
+            end
+        end)
+    else
+        jumpHeight = nil
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+    end
+end
+
+-- 🔘 如果你用 Fluent UI Toggle：
+local Toggle = Tab:Toggle({
+    Title = "空中行走",
+    Desc = "配合无限跳跃",
+    Default = false,
+    Callback = function(Value)
+        setLock(Value)
+    end
+})
+
 local Tab = Window:Tab({
     Title = "aimbot",
     Icon = "https://raw.githubusercontent.com/wsomoQaz/rOblox/main/1756386771849.png",
