@@ -529,6 +529,53 @@ local Toggle = Tab:Toggle({
     end
 })
 
+-- 踏空功能变量
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local stepping = false
+local platform = nil
+local stepConnection = nil
+
+-- 踏空开关函数
+local function setStep(state)
+    stepping = state
+    if stepping then
+        platform = Instance.new("Part")
+        platform.Size = Vector3.new(6, 1, 6)
+        platform.Anchored = true
+        platform.Transparency = 1 -- 设置为0.5可以看到平台
+        platform.CanCollide = true
+        platform.Parent = workspace
+
+        stepConnection = RunService.RenderStepped:Connect(function()
+            if stepping and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local root = LocalPlayer.Character.HumanoidRootPart
+                platform.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3, root.Position.Z)
+            end
+        end)
+    else
+        if platform then
+            platform:Destroy()
+            platform = nil
+        end
+        if stepConnection then
+            stepConnection:Disconnect()
+            stepConnection = nil
+        end
+    end
+end
+
+-- 中文 Toggle
+local Toggle = Tab:Toggle({
+    Title = "踏空功能",
+    Desc = "开关踏空，在空中行走",
+    Default = false, -- 默认关闭
+    Callback = function(Value)
+        setStep(Value)
+    end
+})
+
 local Tab = Window:Tab({
     Title = "aimbot",
     Icon = "https://raw.githubusercontent.com/wsomoQaz/rOblox/main/1756386771849.png",
